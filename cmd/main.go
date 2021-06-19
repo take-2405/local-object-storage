@@ -1,20 +1,20 @@
 package main
 
 import (
-	"local-object-storage/pkg"
-	"local-object-storage/pkg/model/dao"
-	"local-object-storage/pkg/controller"
+	"local-object-storage/pkg/server"
+	"local-object-storage/pkg/server/controller"
+	"local-object-storage/pkg/server/model/dao"
 	"log"
 	"os"
 )
 
 func main() {
 	//minioのコネクション作成
-	minio :=dao.New()
+	minio := dao.New()
 
-	controller:=controller.NewController(minio)
+	controller:= controller.NewController(minio)
 
-	if err:=pkg.Server(controller).Run(); err!=nil{
+	if err:= server.Server(controller).Run(); err!=nil{
 		log.Fatal(err)
 		os.Exit(1)
 	}

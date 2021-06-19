@@ -1,26 +1,21 @@
 package main
 
 import (
-    "log"
-
-    "github.com/minio/minio-go/v7"
-    "github.com/minio/minio-go/v7/pkg/credentials"
+	"local-object-storage/pkg"
+	"local-object-storage/pkg/model/dao"
+	"local-object-storage/pkg/controller"
+	"log"
+	"os"
 )
 
 func main() {
-    endpoint := "localhost:9090"
-    accessKeyID := "minio"
-    secretAccessKey := "minio123"
-    useSSL := false
+	//minioのコネクション作成
+	minio :=dao.New()
 
-    // Initialize minio client sobject.
-    minioClient, err := minio.New(endpoint, &minio.Options{
-        Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-        Secure: useSSL,
-    })
-    if err != nil {
-        log.Fatalln(err)
-    }
+	controller:=controller.NewController(minio)
 
-    log.Printf("%#v\n", minioClient) // minioClient is now set up
+	if err:=pkg.Server(controller).Run(); err!=nil{
+		log.Fatal(err)
+		os.Exit(1)
+	}
 }

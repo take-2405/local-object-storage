@@ -1,35 +1,39 @@
 package dao
 
-import(
+import (
 	"context"
 	"github.com/minio/minio-go/v7"
-	"local-object-storage/pkg/decode"
-	"local-object-storage/pkg/server/model/dto"
+	"io"
 	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
 )
 
-func Upload(minioClient *minio.Client,request dto.UploadImageRequest)error{
+func Upload(minioClient *minio.Client, file *multipart.FileHeader, fileName string) error {
 	var err error
-	var contentType string
 	ctx := context.Background()
-	if request.Type=="png" {
-		contentType = "application/png"
-	}else if request.Type=="jpg"{
-		contentType = "application/jpg"
-	}
-
-	filePath:="./../images/"+request.Name+"."+request.Type
-	objectName :=request.Name+"."+request.Type
-	err = decode.Decode(request.Info,filePath)
+	f, err := file.Open()
 	if err != nil {
 		return err
 	}
+	defer f.Close()
+	size := file.Size
+	buffer := make([]byte, size)
 
-	info, err := minioClient.FPutObject(ctx, request.Bucket, objectName, filePath, minio.PutObjectOptions{ContentType: contentType})
+	newFile, err := os.Create("./../images/" + fileName + ".png")
+	defer newFile.Close()
+	io.Copy(newFile, f)
+
+	fileType := http.DetectContentType(buffer)
+	objectName := fileName + ".png"
+	filePath := "./../images/" + fileName + ".png"
+
+	info, err := minioClient.FPutObject(ctx, "aaa", objectName, filePath, minio.PutObjectOptions{ContentType: fileType})
 	if err != nil {
 		log.Println(err)
 		return err
 	}
-	log.Printf("Successfully uploaded %s of size %d\n", request.Name+"."+request.Type, info.Size)
+	log.Println(info)
 	return err
 }

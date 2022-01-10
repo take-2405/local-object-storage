@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"local-object-storage/pkg/server/model/dao"
 	"local-object-storage/pkg/server/model/dto"
 	"local-object-storage/pkg/server/view"
@@ -9,7 +11,7 @@ import (
 	"net/http"
 )
 
-type Controller struct{
+type Controller struct {
 	Minio dao.Minio
 }
 
@@ -17,10 +19,10 @@ func NewController(miniocontroller dao.Minio) Controller {
 	return Controller{Minio: miniocontroller}
 }
 
-func (ctrl *Controller)BucketListHandler()gin.HandlerFunc{
+func (ctrl *Controller) BucketListHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		buckets,err := dao.BucketList()
-		if err !=nil{
+		buckets, err := dao.BucketList()
+		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
 				http.StatusInternalServerError,
@@ -33,10 +35,10 @@ func (ctrl *Controller)BucketListHandler()gin.HandlerFunc{
 	}
 }
 
-func (ctrl *Controller)CreateBucketHandler()gin.HandlerFunc{
+func (ctrl *Controller) CreateBucketHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var request dto.CreateBucketRequest
-		if err:=c.ShouldBindJSON(&request);err!=nil{
+		if err := c.ShouldBindJSON(&request); err != nil {
 			log.Println("[ERROR] Faild Bind JSON")
 			c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
 				http.StatusBadRequest,
@@ -45,15 +47,15 @@ func (ctrl *Controller)CreateBucketHandler()gin.HandlerFunc{
 			))
 			return
 		}
-		if err := dao.CreateBuckt(ctrl.Minio.Client,request.Name);err!=nil{
+		if err := dao.CreateBuckt(ctrl.Minio.Client, request.Name); err != nil {
 			log.Println(err)
-			if err.Error()==request.Name+"is already exist"{
+			if err.Error() == request.Name+"is already exist" {
 				c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
 					http.StatusBadRequest,
 					"Bad request",
 					"that name bucket is already created",
 				))
-			}else {
+			} else {
 				c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
 					http.StatusInternalServerError,
 					"Internal Server Error",
@@ -66,31 +68,26 @@ func (ctrl *Controller)CreateBucketHandler()gin.HandlerFunc{
 	}
 }
 
-func (ctrl *Controller)UpLoadHandler()gin.HandlerFunc{
+func (ctrl *Controller) UpLoadHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var request dto.UploadImageRequest
-		if err:=c.ShouldBindJSON(&request);err!=nil{
-			log.Println("[ERROR] Faild Bind JSON")
-			c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
-				http.StatusBadRequest,
-				"Internal Server Error",
-				"Request is error",
-			))
-			return
-		}
-
-		if request.Type!="jpg" && request.Type!="png"{
-			log.Println("[ERROR] request type is err")
+		bucketName := c.Query("bucket")
+		if bucketName == "" {
+			log.Println("[ERROR] request bucket is err")
 			c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
 				http.StatusBadRequest,
 				"Bad Request",
-				"Request's type is error",
+				"bucket is error",
 			))
 			return
 		}
 
-		buckets,err := dao.BucketList()
-		if err !=nil{
+		form, _ := c.MultipartForm()
+		files := form.File["a"]
+		var imageNames []string
+		imageName := ""
+
+		buckets, err := dao.BucketList()
+		if err != nil {
 			log.Println(err)
 			c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
 				http.StatusInternalServerError,
@@ -99,12 +96,11 @@ func (ctrl *Controller)UpLoadHandler()gin.HandlerFunc{
 			))
 			return
 		}
-
-		for i,j := range buckets{
-			if j==request.Bucket{
+		for i, j := range buckets {
+			if j == bucketName {
 				break
 			}
-			if i== len(buckets)-1{
+			if i == len(buckets)-1 {
 				c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
 					http.StatusBadRequest,
 					"Bad request",
@@ -114,15 +110,25 @@ func (ctrl *Controller)UpLoadHandler()gin.HandlerFunc{
 			}
 		}
 
-		if err := dao.Upload(ctrl.Minio.Client,request);err!=nil{
-			log.Println(err)
-			c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
-				http.StatusInternalServerError,
-				"Internal Server Error",
-				"Failed to create bucket",
-			))
-			return
+		for _, file := range files {
+			u, err := uuid.NewRandom()
+			if err != nil {
+				fmt.Println(err)
+			}
+			uu := u.String()
+			if err := dao.Upload(ctrl.Minio.Client, file, uu); err != nil {
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
+					http.StatusInternalServerError,
+					"Internal Server Error",
+					"Failed to create bucket",
+				))
+				return
+			}
+			imageName = uu
+			imageNames = append(imageNames, imageName)
+
 		}
-	c.JSON(http.StatusOK,"seccess")
+		c.JSON(http.StatusOK, "seccess")
 	}
 }

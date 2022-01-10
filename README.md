@@ -60,3 +60,6 @@ key：bucket
   value：任意の画像
 
 ![PostMan使用時のリクエストボディ設定方法](./Docs/request.png "PostMan使用時のリクエストボディ設定方法")
+
+### 補足  
+sampleImageディレクトリ中の画像はAPIのテスト用

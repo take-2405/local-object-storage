@@ -1,21 +1,43 @@
 package main
 
 import (
-	"local-object-storage/pkg/server"
-	"local-object-storage/pkg/server/controller"
-	"local-object-storage/pkg/server/model/dao"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"local-object-storage/src/application"
+	"local-object-storage/src/infrastructure"
+	"local-object-storage/src/presentation"
+	"local-object-storage/src/presentation/handler"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
-	//minioのコネクション作成
-	minio := dao.New()
+	minio := infrastructure.NewMinioRepository()
+	bucketUseCase := application.NewBucketUseCase(minio)
+	uploadUseCase := application.NewUploadUseCase(minio)
 
-	controller:= controller.NewController(minio)
+	bucketHandler := handler.NewBucketHandler(bucketUseCase)
+	uploadHandler := handler.NewUploadHandler(uploadUseCase)
 
-	if err:= server.Server(controller).Run(); err!=nil{
+	s := gin.Default()
+	s.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization", "accept", "origin", "Cache-Control", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		MaxAge: 15 * time.Second,
+	}))
+
+	presentation.InitRouting(s, bucketHandler, uploadHandler)
+
+	if err := s.Run(); err != nil {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
 }

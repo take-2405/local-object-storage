@@ -1,4 +1,4 @@
-package domain
+package repository
 
 type RequestDataRepository interface {
 	ParsePlayData()

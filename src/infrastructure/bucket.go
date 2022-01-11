@@ -1,21 +1,14 @@
 package infrastructure
 
 import (
+	"context"
 	"errors"
-	"github.com/minio/minio-go"
+	"github.com/minio/minio-go/v7"
 	"io/ioutil"
 	"log"
 )
 
-type minioMethods struct {
-	Client *minio.Client
-}
-
-func newMinioClient(client *minio.Client) methods {
-	return &minioMethods{Client: client}
-}
-
-func (m minioMethods) GetBucketLists() ([]string, error) {
+func (m *minioRepository) GetBucketLists() ([]string, error) {
 	var list string
 	var lists []string
 	raws, err := ioutil.ReadDir("./../docker/minio/data")
@@ -29,7 +22,7 @@ func (m minioMethods) GetBucketLists() ([]string, error) {
 	return lists, nil
 }
 
-func (m minioMethods) CreateBucket(bucketName string) error {
+func (m *minioRepository) CreateBucket(bucketName string) error {
 	var err error
 	ctx := context.Background()
 	location := "us-east-1"

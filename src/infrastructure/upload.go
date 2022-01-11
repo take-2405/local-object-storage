@@ -1,7 +1,8 @@
 package infrastructure
 
 import (
-	"github.com/minio/minio-go"
+	"context"
+	"github.com/minio/minio-go/v7"
 	"io"
 	"log"
 	"mime/multipart"
@@ -9,7 +10,7 @@ import (
 	"os"
 )
 
-func (m minioMethods) UploadImage(file *multipart.FileHeader, fileName string) error {
+func (m *minioRepository) UploadImage(file *multipart.FileHeader, fileName string, bucket string) error {
 	var err error
 	ctx := context.Background()
 	f, err := file.Open()
@@ -27,7 +28,7 @@ func (m minioMethods) UploadImage(file *multipart.FileHeader, fileName string) e
 	fileType := http.DetectContentType(buffer)
 	objectName := fileName + ".png"
 	filePath := "./../images/" + fileName + ".png"
-	info, err := m.Client.FPutObject(ctx, "aaa", objectName, filePath, minio.PutObjectOptions{ContentType: fileType})
+	info, err := m.Client.FPutObject(ctx, bucket, objectName, filePath, minio.PutObjectOptions{ContentType: fileType})
 	if err != nil {
 		log.Println(err)
 		return err

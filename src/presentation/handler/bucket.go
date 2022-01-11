@@ -3,7 +3,6 @@ package handler
 import (
 	"github.com/gin-gonic/gin"
 	"local-object-storage/src/application"
-	"local-object-storage/src/presentation"
 	"log"
 	"net/http"
 )
@@ -14,30 +13,23 @@ type BucketHandler interface {
 }
 
 type bucketHandler struct {
-	getBucketListsUseCase application.GetBucketListsUseCase
-	createBucketUsecase   application.CreateBucketUseCase
+	bucketUseCase application.BucketUseCase
 }
 
 // NewMinioHandler minioHandlerのコンストラクタ
-func NewBucketHandler(getBucketListsUseCase application.GetBucketListsUseCase, createBucketUsecase application.CreateBucketUseCase) BucketHandler {
+func NewBucketHandler(bucketUseCase application.BucketUseCase) BucketHandler {
 	return &bucketHandler{
-		getBucketListsUseCase: getBucketListsUseCase,
-		createBucketUsecase:   createBucketUsecase,
-	}
-}
-
-func (bh *bucketHandler) BucketList() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, "ok")
+		bucketUseCase: bucketUseCase,
 	}
 }
 
 func (bh *bucketHandler) CreateBucket() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var request presentation.CreateBucketRequest
-		if err := c.ShouldBindJSON(&request); err != nil {
+		var request CreateBucketRequest
+		err := c.ShouldBindJSON(&request)
+		if err != nil || len(request.Name) < 3 {
 			log.Println("[ERROR] Faild Bind JSON")
-			c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
+			c.JSON(http.StatusBadRequest, ReturnErrorResponse(
 				http.StatusBadRequest,
 				"Internal Server Error",
 				"Request is error",
@@ -45,16 +37,16 @@ func (bh *bucketHandler) CreateBucket() gin.HandlerFunc {
 			return
 		}
 
-		if err := dao.CreateBuckt(ctrl.Minio.Client, request.Name); err != nil {
+		if err := bh.bucketUseCase.CreateBucket(request.Name); err != nil {
 			log.Println(err)
 			if err.Error() == request.Name+"is already exist" {
-				c.JSON(http.StatusBadRequest, view.ReturnErrorResponse(
+				c.JSON(http.StatusBadRequest, ReturnErrorResponse(
 					http.StatusBadRequest,
 					"Bad request",
 					"that name bucket is already created",
 				))
 			} else {
-				c.JSON(http.StatusInternalServerError, view.ReturnErrorResponse(
+				c.JSON(http.StatusInternalServerError, ReturnErrorResponse(
 					http.StatusInternalServerError,
 					"Internal Server Error",
 					"Failed to create bucket",
@@ -63,5 +55,21 @@ func (bh *bucketHandler) CreateBucket() gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, "success create bucket")
+	}
+}
+
+func (bh *bucketHandler) BucketList() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		buckets, err := bh.bucketUseCase.GetBucketLists()
+		if err != nil {
+			log.Println("[ERROR] Faild Bind JSON")
+			c.JSON(http.StatusBadRequest, ReturnErrorResponse(
+				http.StatusBadRequest,
+				"Internal Server Error",
+				"Request is error",
+			))
+			return
+		}
+		c.JSON(http.StatusOK, buckets)
 	}
 }

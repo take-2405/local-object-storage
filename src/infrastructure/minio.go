@@ -1,47 +1,33 @@
 package infrastructure
 
 import (
-	"github.com/minio/minio-go"
-	"github.com/minio/minio-go/pkg/credentials"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"local-object-storage/config"
 	"local-object-storage/src/domain/repository"
 	"log"
 )
 
-type MinioConfig struct {
+type minioConfig struct {
 	EndPoint        string
 	AccessKey       string
 	SecretAccessKey string
 }
 
-type Minio struct {
-	Client  *minio.Client
-	Methods Methods
+type minioRepository struct {
+	Client *minio.Client
 }
 
-type Methods struct {
-	MinioMethods repository.Minio
-}
-
-//type methods interface {
-//	GetBucketLists() ([]string, error)
-//	UploadImage(file *multipart.FileHeader, fileName string) error
-//	CreateBucket(bucketName string) error
-//}
-
-func New() Minio {
-	var Config MinioConfig
-	var Minio Minio
+func NewMinioRepository() repository.MinioRepository {
+	var Config minioConfig
 	var err error
 	Config.EndPoint, Config.AccessKey, Config.SecretAccessKey = config.GetMinioConfig()
-	Minio.Client, err = minio.New(Config.EndPoint, &minio.Options{
+	conn, err := minio.New(Config.EndPoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(Config.AccessKey, Config.SecretAccessKey, ""),
 		Secure: false,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	Minio.Methods.MinioMethods = newMinioClient(Minio.Client)
-	return Minio
+	return &minioRepository{Client: conn}
 }

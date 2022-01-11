@@ -1,4 +1,4 @@
-package view
+package handler
 
 type BucketListResponse struct {
 	Buckets []string `json:"Buckets"`
@@ -12,15 +12,15 @@ func ReturnBucketListResponse(Bukets []string) BucketListResponse {
 }
 
 type Error struct {
-	Code		int		`json:"code"`
-	Message		string	`json:"message"`
-	Description	string	`json:"description"`
+	Code        int    `json:"code"`
+	Message     string `json:"message"`
+	Description string `json:"description"`
 }
 
 func ReturnErrorResponse(code int, msg, desc string) Error {
 	body := Error{
-		Code: code,
-		Message: msg,
+		Code:        code,
+		Message:     msg,
 		Description: desc,
 	}
 	return body

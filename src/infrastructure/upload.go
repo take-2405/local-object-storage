@@ -1,4 +1,4 @@
-package dao
+package infrastructure
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"os"
 )
 
-func Upload(minioClient *minio.Client, file *multipart.FileHeader, fileName string) error {
+func (m *minioRepository) UploadImage(file *multipart.FileHeader, fileName string, bucket string) error {
 	var err error
 	ctx := context.Background()
 	f, err := file.Open()
@@ -28,8 +28,7 @@ func Upload(minioClient *minio.Client, file *multipart.FileHeader, fileName stri
 	fileType := http.DetectContentType(buffer)
 	objectName := fileName + ".png"
 	filePath := "./../images/" + fileName + ".png"
-
-	info, err := minioClient.FPutObject(ctx, "aaa", objectName, filePath, minio.PutObjectOptions{ContentType: fileType})
+	info, err := m.Client.FPutObject(ctx, bucket, objectName, filePath, minio.PutObjectOptions{ContentType: fileType})
 	if err != nil {
 		log.Println(err)
 		return err

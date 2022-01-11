@@ -25,11 +25,11 @@ default running port is 8080.
 
 **EndPoints**
 
-|  EndPoint | Methods | Discribe                                            |
-| ---- |---------|-----------------------------------------------------|
-|  read/bucket  | GET     | Check the existing bucket.                          |
-|  create/bucket | POST    | Create a bucket.                                    |
-| upload/images |   POST    | Upload the image. (Only png and jpg are supported.) |
+| EndPoint            | Methods | Discribe                                            |
+|---------------------|---------|-----------------------------------------------------|
+| bucket/read         | GET     | Check the existing bucket.                          |
+| bucket/create | POST    | Create a bucket.                                    |
+| upload/images       |   POST    | Upload the image. (Only png and jpg are supported.) |
 
 - read/bucket：存在するバケットのリストを確認する
 - create/bucket：バケットを作成する
@@ -38,10 +38,10 @@ default running port is 8080.
 ※バケット：画像を保存するため入れもの(フォルダ同じだものと考えてOK)
 
 #### 各エンドポイントのリクエスト例
-- read/bucket：存在するバケットのリストを確認する  
+- bucket/read：存在するバケットのリストを確認する  
 **リクエストを送るのみ**
 
-- create/bucket：バケットを作成する  
+- bucket/create：バケットを作成する  
   **リクエストボディ**
 ```cassandraql
 {
